@@ -7,37 +7,41 @@
 #include "NRPA.h"
 
 int main(int argc, char** argv)
-
 {
-	
 //
-// fichier texte de sortie
+// E : output file 
+// F : fichier texte de sortie
 //
 FILE* fichier;
 fichier = fopen("c:/users/MS/toto_iter.txt","w");
 //
-// declaration des grilles de jeu
+// E : alloc grids
+// F : declaration des grilles de jeu
 //
 grille *Node, *Init, *Max;
 Node=malloc(sizeof(grille));
 Init = malloc(sizeof(grille));
 Max = malloc(sizeof(grille));
 //
-// source alea
+// E : init alea
+// F : init source aleatoire
 //
 srand(89765);
 //
-// niveau de jeu
+// E : initial game level
+// F : niveau de jeu
 //
 int NIV;
 NIV = init_jeu(Init);
 //
-// grille initiale
+// E : copy initial grid in the current grid
+// F : grille initiale
 //
 memcpy(Node, Init, sizeof(grille));
 rech_coup(Node);
 //
-// boucle principale de jeu
+// E : main iteration
+// F : boucle principale de jeu
 //
 Max->nbhc = 0;
 while(Node->nbcoup > 0)
@@ -51,7 +55,8 @@ while(Node->nbcoup > 0)
 	disp_jeu(Max, fichier);
 	}
 //
-// sortie des resultats
+// E : output results
+// F : sortie des resultats
 //
 disp_jeu(Max, fichier);
 }
