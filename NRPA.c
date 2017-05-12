@@ -5,135 +5,103 @@
 #include <time.h>
 #include "Basic_Fct.h"
 #include "NRPA.h"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void NRPA_ITE(grille *res, int level,grille *node,FILE *fichier)
+grille NRPA(int level, grille *node, poli strat, FILE *fichier)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// E : algo "nested rollout policy adaptation"  version iterative
+// E : algo "nested rollout policy adaptation" 
 //     parameters:
 //     p1 = level of algo
 //     p2 = grid to evaluate
-//     p3 : output file
+//     p3 = initial grid
+//     p4 : current policy
+//     p5 : output file
 // 
-// F : algo "nested rollout policy adaptation" version itérative
+// F : algo "nested rollout policy adaptation" 
 //     parametres
 //     p1 = level de la recherche
 //     p2 = grille a partir de laquelle la recherche est réalisée
-//     p3 : fichier de sortie
-//
-//
-// E : create variables used by algorithm
-// F : creation des variables utilisées par l'algorithme
+//     p3 : strategie courante
+//     p4 : fichier de sortie
 //
 {
-int ilevel,x,z;
-grille **max,**r;
-poli **strat;
-int i[20];
-max   = malloc((level + 1)*sizeof(grille *));
-r     = malloc((level + 1)*sizeof(grille *));
-strat = malloc((level + 1)*sizeof(poli   *));
-for (ilevel=0;ilevel<=level;ilevel++)
+if (level == 0)
 	{
-	max[ilevel] = malloc(sizeof(grille));
-	r[ilevel] = malloc(sizeof(grille));
-	strat[ilevel] = malloc(sizeof(poli));
+//
+// E : At level 0, playout with policy
+// F : Au niveau 0, rollout sur la grille en utilisant la strategie
+//
+	return(NRPA_playout(node, &strat, fichier));
 	}
-int N = 100;
-//
-// E : initialization of variables
-// F : initialisation des variables
-//
-for (ilevel=1;ilevel<=level;ilevel++)
+else
 	{
-	max[ilevel]->nbhc=0;
-	for (x = 0; x<(MAXGRI*MAXGRI * 4); x++)
-		strat[ilevel]->policy[x] = 0.;
-	i[ilevel]=0;
-	}
-//
-// E : playout on node with strat[1]
-// F : rollout sur node avec strat[1]
-//
-label1:
-ilevel=1;
-NRPA_playout(max[0],node, strat[ilevel], fichier);
-//
-// E : next iteration (either next i[] on same level (label1) or reset i[] on previous level (label2) 
-// F : suite iteration (soit iteration au meme niveau (label1), soit remontee niveau supérieur (label2)
-//
-label2:
-memcpy(r[ilevel],max[ilevel - 1],sizeof(grille));
-if (r[ilevel]->nbhc >= max[ilevel]->nbhc)
-	{
-
-	memcpy(max[ilevel],r[ilevel],sizeof(grille));
-	NRPA_adapt(strat[ilevel], node, max[ilevel],fichier);
-	}
-i[ilevel] = i[ilevel] + 1;
-if (i[ilevel]<N)
-	{
-	for (z = ilevel - 1; z>0; z = z - 1)
+	int N = 5, i;
+	grille result,max;
+	max.nbhc=0;
+	for (i = 0; i<N; i++)
 		{
-		max[z]->nbhc = 0;
-		memcpy(strat[z], strat[z+1],sizeof(poli));
-		i[z] = 0;
+		result=NRPA(level - 1, node, strat, fichier);
+		if (result.nbhc >= max.nbhc)
+			{
+			memcpy(&max, &result, sizeof(grille));
+			strat=NRPA_adapt(strat, node, &max, fichier);
+			}
 		}
-	goto label1;
+	return(max);
 	}
-ilevel = ilevel + 1;
-if (ilevel <= level)
-	goto label2;
-//
-// return best value
-//
-memcpy(res, max[level], sizeof(grille));
-for (ilevel = 0; ilevel <= level; ilevel++)
-	{
-	free(max[ilevel]);
-	free(r[ilevel]);
-	free(strat[ilevel]);
-	}
-free(max);
-free(r);
-free(strat);
 }
-
 //////////////////////////////////////////////////////////////////////////////////////////////
- void NRPA_playout(grille *res, grille *gri, poli *policy, FILE *fichier)
+grille NRPA_playout(grille *gri, poli *policy, FILE *fichier)
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
 // E : rollout with move selection according policy
 // F : rollout avec selection du coup selon la strategie "policy"
 //
 {
-
-clock_t c_deb;
-c_deb=clock();
+grille a,b;
 int coup;
 //
-// E : copy current grid on res
-// F : copie grille courante sur res
+// E : copy current grid on a
+// F : copie grille courante sur a
 //
-memcpy(res, gri, sizeof(grille));
-rech_coup(res);
+memcpy(&a, gri, sizeof(grille));
+rech_coup(&a);
 //
 // E : while game is not over
 // F : tant que le jeu n'est pas fini
 //
-while (res->nbcoup>0)
+while (a.nbcoup>0)
 	{
 //
 // E: select best move and play it on grid b
 // F: recherche le meilleur coup et le joue sur la grille b
 //
-	coup = NRPA_sel_coup(res, policy, fichier);
-	joue_rech(res, coup);
+	coup = NRPA_sel_coup(&a, policy, fichier);
+	joue_coup(&a, &b, coup);
+	rech_coup_opti(&a, &b, coup);
+	if (b.nbcoup > 0)
+		{
+//
+// E: if one move available on b, play the best move on grid a
+// F: si un coup possible sur b, joue le meilleur coup sur a
+//
+		coup = NRPA_sel_coup(&b, policy, fichier);
+		joue_coup(&b, &a, coup);
+		rech_coup_opti(&b, &a, coup);
+		}
+	else
+//
+// E: if no move avail on b, just copy grid b on grid a
+		{
+		memcpy(&a, &b, sizeof(grille));
+		}
 	}
-clock_t c_fin;
-c_fin = clock();
-// timer
-//fprintf(fichier, "P %d %d\n", c_deb, c_fin);
+//
+// E: end of game, return a grid
+// F: fin de jeu, retour grille a
+//
+return(a);
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 int NRPA_sel_coup(grille *a, poli *strat, FILE * fichier)
@@ -197,18 +165,13 @@ for (i = 0; i<a->nbcoup; i++)
 exit(1);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
-void NRPA_adapt(poli *strat, grille *root, grille *best, FILE *fichier)
+poli NRPA_adapt(poli strat, grille *root, grille *best, FILE *fichier)
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 // E : for each move between root and best, adaptation of the policy
 // F : pour chaque coup entre root et best, adaptation de la strategie
 //
 {
-
-clock_t c_deb;
-c_deb = clock();
-
-
 int i, j_ok, j;
 double z, alpha = 1;
 //
@@ -217,7 +180,7 @@ double z, alpha = 1;
 // 
 poli stratnew;
 for (i = 0; i<MAXGRI*MAXGRI*4;i++)
-	stratnew.policy[i] = strat->policy[i];
+	stratnew.policy[i] = strat.policy[i];
 //
 // E : duplicate root into node
 // F : duplication de root dans node
@@ -247,7 +210,7 @@ for (i = node.nbhc; i < best->nbhc; i++)
 // E : sum in Z for normalization
 // F : cumul dans Z pour normaliser
 //
-		z += exp(strat->policy[node.code[j]]);
+		z += exp(strat.policy[node.code[j]]);
 //
 // E : if the current move is the best move, add alpha in the policynew and mark the number of the move
 // F : si le coup courant est celui qui a ete choisi dans best, ajout de alpha dans le policynew
@@ -278,22 +241,15 @@ for (i = node.nbhc; i < best->nbhc; i++)
 // F : re-iteration sur les coups de node pour normalisation
 //
 	for (j = 0; j < node.nbcoup; j++)
-		stratnew.policy[node.code[j]] -= alpha * exp(strat->policy[node.code[j]]) / z;
-
+		stratnew.policy[node.code[j]] -= alpha * exp(strat.policy[node.code[j]]) / z;
 //
 // E : Next move of best
 // F : on joue le coup suivant dans l'historique des coups de best
 //
-	joue_rech(&node,j_ok);
+	joue_coup(&node, &node, j_ok);
+	rech_coup(&node);
 	}
-
-for (i = 0; i<MAXGRI*MAXGRI * 4; i++)
-	strat->policy[i] = stratnew.policy[i];
-
-clock_t c_fin;
-c_fin = clock();
-//timer
-//fprintf(fichier, "A %d %d\n", c_deb,c_fin);
+return (stratnew);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////

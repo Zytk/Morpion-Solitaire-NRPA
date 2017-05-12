@@ -8,56 +8,58 @@
 
 int main(int argc, char** argv)
 {
+int i;
 //
-// E : output file 
-// F : fichier texte de sortie
+// fichier texte de sortie
 //
 FILE* fichier;
-fichier = fopen("c:/users/MS/toto_iter.txt","w");
+fichier = fopen("c:/users/MS/toto_recurs.txt","w");
 //
-// E : alloc grids
-// F : declaration des grilles de jeu
+// declaration des grilles de jeu
 //
-grille *Node, *Init, *Max;
-Node=malloc(sizeof(grille));
-Init = malloc(sizeof(grille));
-Max = malloc(sizeof(grille));
+grille Node, Init, Max;
 //
-// E : init alea
-// F : init source aleatoire
+// declaration et init de la stratégie
+//
+poli strat;
+for (i = 0; i < MAXGRI*MAXGRI*4; i++)
+	strat.policy[i] = 0;
+//
+// source alea
 //
 srand(89765);
 //
-// E : initial game level
-// F : niveau de jeu
+// niveau de jeu
 //
 int NIV;
-NIV = init_jeu(Init);
+NIV = init_jeu(&Init);
 //
-// E : copy initial grid in the current grid
-// F : grille initiale
+// grille initiale
 //
-memcpy(Node, Init, sizeof(grille));
-rech_coup(Node);
+memcpy(&Node, &Init, sizeof(grille));
+rech_coup(&Node);
 //
-// E : main iteration
-// F : boucle principale de jeu
+// boucle principale de jeu
 //
-Max->nbhc = 0;
-while(Node->nbcoup > 0)
+Max.nbhc = 0;
+while(Node.nbcoup > 0)
 	{
-	NRPA_ITE(Max, 3, Node, fichier);
+	Max=NRPA(2,&Node,strat,fichier);
+	fprintf(fichier, "fin recurs level=2 n=3\n");
+	fclose(fichier);
+	exit(66);
 	NIV++;
-	printf("%d %d %010d\n",  NIV, Max->nbhc, sign_grille(Max));
-	constr_jeu(Node, Max, Init, NIV,fichier);
-	rech_coup(Node);
+	printf("%d %d %010d\n", NIV, Max.nbhc, sign_grille(&Max));
+	Node=constr_jeu(&Max, &Init, NIV,fichier);
+	rech_coup(&Node);
 	fprintf(fichier,"Grille Max\n");
-	disp_jeu(Max, fichier);
+	disp_jeu(&Max, fichier);
+	NRPA_disp_pol(strat, fichier);
 	}
 //
-// E : output results
-// F : sortie des resultats
+// sortie des resultats
 //
-disp_jeu(Max, fichier);
+disp_jeu(&Max, fichier);
+NRPA_disp_pol(strat, fichier);
 }
 

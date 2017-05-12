@@ -68,10 +68,6 @@ void rech_coup(grille *a);
 // F: Recherche des coups legaux optimisée. nécessite la grille précedente, liste des coups précédente et dernier coup joué
 void rech_coup_opti(grille *a, grille *b, int coup_joue);
 
-// E: play and search legal mode
-// F: joue et recherche optimise
-void joue_rech(grille *a, int coup_joue);
-
 // E: update dominateur fied in the grid structure 
 // F: maj champ dominateur dans la structure grille
 void maj_dominateur(grille *a);
@@ -86,4 +82,4 @@ int sign_grille(grille *a);
 
 // E : Construction of a grid with init grid, historic and number of moves
 // F : Reconstruit une grille a partir d'une grille initiale, d'un historique et du nombre de coup à jouer
-void constr_jeu(grille *res, grille *MaxJ, grille *Init, int NIV, FILE *fichier);
+grille constr_jeu(grille *MaxJ, grille *Init, int NIV, FILE *fichier);

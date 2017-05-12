@@ -516,15 +516,6 @@ int dirD[4] = { 2, 4, 8, 16 };
 int dirO[4] = { 32, 64, 128, 256 };
 int dirDO[4] = { 34, 68, 136, 272 };
 //
-// E : if a = b stop run
-// F : si a = b arret du programme
-//
-if (a==b)
-	{
-	printf("la fonction rech_coup_opti ne peut pas fonctionner sur la meme grille.\n");
-	exit(1);
-	}
-//
 // E: for each previous move (a->coup[], check if it's still valid on b grid
 //    if yes, the previous move is loaded in the current legal moves table (b->coup) 
 // F: Pour chaque coup de la table des coups précédents (a) on regarde s'il est encore valide pour b
@@ -700,233 +691,6 @@ for (i = ix - 4; i <= ix + 4; i++)
 //
 maj_dominateur(b);
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////
-void joue_rech(grille *a, int coup_joue)
-//////////////////////////////////////////////////////////////////////////////////////////
-//
-// E: search of legal moves (b->nbcoup, b->coup[]) with b = a + a->coup[coup_joue] 
-// F: recherche les coups jouables (b->nbcoup, b->coup[]) avec  b = a + a->coup[coup_joue] 
-//
-{
-//
-// E : First play the move on a
-// F : Joue tout d'abord le coup
-//
-joue_coup(a,a,coup_joue);
-int i, j, ix, jx, dir, k, ii, jj, kk, tot, res, xx, tab[15], prio, mauv;
-int coupX_p, coupY_p, coupD_p, coupK_p, coupX, coupY, coupD, coupK;
-//
-// E: direction table
-// F: table des directions
-//
-int dirX[4] = { 0, 1, 1, 1 };
-int dirY[4] = { 1, 1, 0, -1 };
-int dirD[4] = { 2, 4, 8, 16 };
-int dirO[4] = { 32, 64, 128, 256 };
-int dirDO[4] = { 34, 68, 136, 272 };
-//
-// E: for each move (a->coup[], check if it's still valid
-//    if not, the move is deleted 
-// F: Pour chaque coup de la table des coups (a) on regarde s'il est encore valide
-//    Si non, on le supprime de la table a
-//
-for (i = 0; i < a->nbcoup; i++)
-	{
-	tot = 0;
-	prio = 0;
-	mauv = 0;
-	coupX_p = cpX(a->coup[i]);
-	coupY_p = cpY(a->coup[i]);
-	coupD_p = cpD(a->coup[i]);
-	coupK_p = cpK(a->coup[i]);
-	if (a->gri[coupX_p][coupY_p] == 0)
-		{
-		for (kk = -3; kk<8; kk++)
-			{
-			ii = coupX_p + (coupK_p + kk - 4)*dirX[coupD_p];
-			jj = coupY_p + (coupK_p + kk - 4)*dirY[coupD_p];
-			if ((kk == 0) && ((a->gri[ii][jj] & dirD[coupD_p]) == 0)){ tot = tot + 1; }
-			if ((kk == 1) && ((a->gri[ii][jj] & dirDO[coupD_p]) == 0)){ tot = tot + 1; }
-			if ((kk == 2) && ((a->gri[ii][jj] & dirDO[coupD_p]) == 0)){ tot = tot + 1; }
-			if ((kk == 3) && ((a->gri[ii][jj] & dirDO[coupD_p]) == 0)){ tot = tot + 1; }
-			if ((kk == 4) && ((a->gri[ii][jj] & dirO[coupD_p]) == 0)){ tot = tot + 1; }
-//
-// E: selection of move with priority high
-// F: selection des coups prioritaires
-//
-			if ((kk == 4) && ((a->gri[ii][jj] & dirD[coupD_p]) == dirD[coupD_p])){ prio = 1; }
-			if ((kk == 0) && ((a->gri[ii][jj] & dirO[coupD_p]) == dirO[coupD_p])){ prio = 1; }
-//
-// E: selection of move with priority low
-// F: selection des mauvais coups
-//
-			if ((kk == -1) && ((a->gri[ii][jj] & dirO[coupD_p]) == dirO[coupD_p])){ mauv = 1; }
-			if ((kk == -2) && ((a->gri[ii][jj] & dirO[coupD_p]) == dirO[coupD_p])){ mauv = 1; }
-			if ((kk == -3) && ((a->gri[ii][jj] & dirO[coupD_p]) == dirO[coupD_p])){ mauv = 1; }
-			if ((kk == 5) && ((a->gri[ii][jj] & dirD[coupD_p]) == dirD[coupD_p])){ mauv = 1; }
-			if ((kk == 6) && ((a->gri[ii][jj] & dirD[coupD_p]) == dirD[coupD_p])){ mauv = 1; }
-			if ((kk == 7) && ((a->gri[ii][jj] & dirD[coupD_p]) == dirD[coupD_p])){ mauv = 1; }
-			}
-		}
-	if (tot == 5)
-		{
-//
-// E: the current move is still valid : update priority (see rech_coup for more explanation)
-// F: le coup courant est encore valide : maj priorite (voir rech_coup pour plus d'explications)
-//
-			a->priorite[i] = 1005;
-			if (prio>0)
-				a->priorite[i] = 1010;
-			if ((mauv>0) && (a->priorite[i] == 1005))
-				a->priorite[i] = 1000;
-//
-// E: and initialize dominateur[i] (update at the end of the function)
-// F: et initialise dominateur[i] (mise à jour à la fin de la fonction)
-//
-			a->dominateur[i] = 999;
-		}
-	else
-//
-// E : if the move is not valid, mark for deletion
-// F : Si le coup n'est plus valide, le coup est marqué pour suppression
-// 
-		a->priorite[i]=0;
-	}
-
-//
-// E: Search for legal move around the previous move
-// F: Recherche des coups jouables autour de la case jouée au coup précédent
-//
-ix = cpX(a->coup[coup_joue]);
-jx = cpY(a->coup[coup_joue]);
-for (i = ix - 4; i <= ix + 4; i++)
-	{
-	for (j = jx - 4; j <= jx + 4; j++)
-		{
-		if ((a->gri[i][j] == 0) && (i>0) && (j>0) && (i<MAXGRI) && (j<MAXGRI))
-			{
-			if ((a->gri[i - 1][j - 1] + a->gri[i - 1][j] + a->gri[i - 1][j + 1] + a->gri[i][j - 1] + a->gri[i][j + 1] + a->gri[i + 1][j - 1] + a->gri[i + 1][j] + a->gri[i + 1][j + 1]) != 0)
-				{
-				for (dir = 0; dir<4; dir++)
-					{
-					if ((a->gri[i + dirX[dir]][j + dirY[dir]] != 0) || (a->gri[i - dirX[dir]][j - dirY[dir]] != 0))
-						{
-						for (k = -7; k<=7; k++)
-							{
-							tab[k + 7] = 1023;
-							ii = i + k*dirX[dir];
-							jj = j + k*dirY[dir];
-							if ((ii >= 0) && (ii<MAXGRI) && (jj >= 0) && (jj<MAXGRI))
-								tab[k + 7] = a->gri[ii][jj];
-							}
-						for (k = 3; k<8; k++)
-							{
-							tot = 0;
-							if ((tab[k] & dirD[dir]) == 0){ tot = tot + 1; }
-							if ((tab[k + 1] & dirDO[dir]) == 0){ tot = tot + 1; }
-							if ((tab[k + 2] & dirDO[dir]) == 0){ tot = tot + 1; }
-							if ((tab[k + 3] & dirDO[dir]) == 0){ tot = tot + 1; }
-							if ((tab[k + 4] & dirO[dir]) == 0){ tot = tot + 1; }
-							for (kk = 0; kk<5; kk++)
-								if (((k + kk) != 7) && ((tab[k + kk] & 1) == 1)){ tot = tot + 1; }
-							if (tot == 9)
-								{
-// 
-// E: same algorithme than rech_coup, except a check for duplicates move
-// F: meme algo que rech_coup, a l'exception d'une recherche de doublons sur les coups
-//
-								res = 0;
-								for (xx = 0; xx < a->nbcoup; xx++)
-									{
-									coupX = cpX(a->coup[xx]);
-									coupY = cpY(a->coup[xx]);
-									coupD = cpD(a->coup[xx]);
-									coupK = cpK(a->coup[xx]);
-									if ((coupX == i) && (coupY == j) && (coupD == dir) && (coupK == (k - 3)))
-										res = 1;
-									}
-								if (res == 0)
-									{
-									coupX = i;
-									coupY = j;
-									coupD = dir;
-									coupK = k - 3;
-									a->priorite[a->nbcoup] = 1005;
-									for (kk = 3; kk<8; kk++)
-										if (kk == k)
-											if (((tab[k] & dirO[dir]) == dirO[dir]) || ((tab[k + 4] & dirD[dir]) == dirD[dir]))
-												a->priorite[a->nbcoup] = 1010;
-									if (a->priorite[a->nbcoup] == 1005)
-										{
-										for (kk = 3; kk<8; kk++)
-											{
-											if ((tab[k - 1] & dirO[dir]) == dirO[dir])a->priorite[a->nbcoup] = 1000;
-											if ((tab[k - 2] & dirO[dir]) == dirO[dir])a->priorite[a->nbcoup] = 1000;
-											if ((tab[k - 3] & dirO[dir]) == dirO[dir])a->priorite[a->nbcoup] = 1000;
-											if ((tab[k + 5] & dirD[dir]) == dirD[dir])a->priorite[a->nbcoup] = 1000;
-											if ((tab[k + 6] & dirD[dir]) == dirD[dir])a->priorite[a->nbcoup] = 1000;
-											if ((tab[k + 7] & dirD[dir]) == dirD[dir])a->priorite[a->nbcoup] = 1000;
-											}
-										}
-									a->coup[a->nbcoup] = cpXYDK(coupX, coupY, coupD, coupK);
-//
-// E: initialize dominateur[i] (update at the end of the function)
-// F: initialise dominateur[i] (mise à jour à la fin de la fonction)
-//
-									a->dominateur[a->nbcoup] = 999;
-									a->nbcoup += 1;
-//
-// E: checks for data integrity
-// F: verifications de coherence
-// 
-									if (a->nbcoup > MAXCOU)
-										{
-										printf("table des coups possibles trop petite %d %d \n", a->nbcoup, MAXCOU);
-										exit(1);
-										}
-									if ((i == 1) || (i == (MAXGRI - 1)) || (j == 1) || (j == (MAXGRI - 1)))
-										{
-										printf("table gri trop petite : coups trouvés en bordure %d %d", i, j);
-										exit(1);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-//
-// E : delete marked moves (prio=0)
-// F: supprime les coups marques (prio=0)
-//
-int bcoup[MAXLAR],bprio[MAXLAR],bdomi[MAXLAR],nbb;
-nbb=0;
-for (i=0;i<a->nbcoup;i++)
-	if (a->priorite[i]!=0)
-		{
-		bcoup[nbb] = a->coup[i];
-		bprio[nbb] = a->priorite[i];
-		bdomi[nbb] = a->dominateur[i];
-		nbb++;
-		}
-a->nbcoup=nbb;
-for (i = 0; i<a->nbcoup; i++)
-	{
-	a->coup[i] = bcoup[i];
-	a->priorite[i] = bprio[i];
-	a->dominateur[i] = bdomi[i];
-	}
-//
-// E: update of the field dominateur[] for all moves
-// F: mise à jour du champ dominateur[]
-//
-maj_dominateur(a);
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void maj_dominateur(grille *a)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1047,7 +811,7 @@ for (uu = -4; uu <= 0; uu++)
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
-void constr_jeu(grille *res, grille *MaxJ, grille *Init, int NIV,FILE *fichier)
+grille constr_jeu(grille *MaxJ, grille *Init, int NIV,FILE *fichier)
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // E: The grid Node is generated with the first NIV moves of MaxJ historic starting  with position Init
@@ -1074,5 +838,5 @@ for (i=0;i<NIV;i++)
 		}
 	joue_coup(&Node,&Node,j0);
 	}
-memcpy(res,&Node,sizeof(grille));
+return(Node);
 }

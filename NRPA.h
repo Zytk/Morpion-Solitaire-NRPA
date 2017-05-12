@@ -1,11 +1,15 @@
 
 // E : algo NRPA
 // F : algo NPRA
-void NRPA_ITE(grille *res,int level, grille *node, FILE *fichier);
+grille NRPA(int level, grille *node, poli strat, FILE *fichier);
+
+// E : algo NRPA
+// F : algo NPRA
+grille NRPA_ITE(int level, grille node, FILE *fichier);
 
 // E : NRPA playout 
 // F : NRPA rollout
- void NRPA_playout(grille *res, grille *gri, poli *policy, FILE *fichier);
+grille NRPA_playout(grille *gri, poli *policy, FILE *fichier);
 
 // E : select a move with NRPA algorithm
 // F : selection d'un coup (algo NRPA)
@@ -13,7 +17,7 @@ int NRPA_sel_coup(grille *a, poli *policy, FILE * fichier);
 
 // E : adapt strategy (NRPA)
 // F : adaptation de la strategie
-void NRPA_adapt(poli *policy, grille *root, grille *best, FILE *fichier);
+poli NRPA_adapt(poli policy, grille *root, grille *best, FILE *fichier);
 
 // E : calculation of field "code" (NRPA algorithm)
 // F : calcul du "code" des coups legaux (NRPA)
